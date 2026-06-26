@@ -237,27 +237,41 @@ class ProjectBootstrap:
 
         if info.has_mathlib:
             report.add("Mathlib dependency already declared", changed=False)
-            # Do NOT run lake update when Mathlib is already pinned — it would
+            # Do NOT run `lake update` when Mathlib is already pinned — it would
             # silently upgrade the version in lake-manifest.json, which can
             # break a project that was carefully pinned to a specific Mathlib.
-            return
+            # We still fetch the cache + build below: the `math` template pins
+            # Mathlib but never downloads its oleans, so without this the first
+            # `lake build` recompiles all of Mathlib from scratch.
+        else:
+            try:
+                modified = self.lake.add_mathlib_dependency()
+                if modified:
+                    report.add(f"Added Mathlib dependency to {info.path.name}")
+            except Exception as e:
+                report.warn(f"Failed to add Mathlib dependency: {e}")
+                return
 
-        try:
-            modified = self.lake.add_mathlib_dependency()
-            if modified:
-                report.add(f"Added Mathlib dependency to {info.path.name}")
-        except Exception as e:
-            report.warn(f"Failed to add Mathlib dependency: {e}")
-            return
+            # `lake update` generates the initial manifest lockfile for the
+            # dependency we just added. Only needed on first add.
+            try:
+                self.lake.update()
+                report.add("Ran `lake update`", changed=False)
+            except Exception as e:
+                report.warn(f"`lake update` failed: {e}")
+                return
 
-        # `lake update` / cache-get / build are only needed after we just added
-        # Mathlib for the first time — they generate the initial manifest lockfile.
+        # Match our toolchain to Mathlib's BEFORE fetching the cache. Mathlib's
+        # olean cache is only valid for the exact Lean version it was built
+        # with, so a mismatch (e.g. project on v4.31.0, Mathlib master on
+        # v4.32.0-rc1) makes `lake build` reject the cache and recompile all of
+        # Mathlib from scratch.
         try:
-            self.lake.update()
-            report.add("Ran `lake update`", changed=False)
+            tc_note = self.lake.sync_toolchain_to_mathlib()
+            if tc_note:
+                report.add(f"Synced lean-toolchain to Mathlib ({tc_note})")
         except Exception as e:
-            report.warn(f"`lake update` failed: {e}")
-            return
+            report.warn(f"Could not sync lean-toolchain to Mathlib: {e}")
 
         if self.options.fetch_mathlib_cache:
             note = self.lake.get_mathlib_cache()

@@ -144,6 +144,33 @@ class Lake:
             return f"(mathlib cache unavailable: {result.stderr.strip() or 'unknown'})"
         return result.stdout.strip()
 
+    def sync_toolchain_to_mathlib(self) -> str | None:
+        """Pin the project's `lean-toolchain` to the resolved Mathlib's.
+
+        Mathlib's precompiled olean cache is only valid for the *exact* Lean
+        version it was built with. `lake init … math` pins the project to the
+        locally installed Lean, but `require mathlib from git` pulls Mathlib
+        master — which routinely tracks a newer toolchain. When they differ,
+        Lean rejects the downloaded oleans and `lake build` recompiles all of
+        Mathlib from scratch, defeating the cache.
+
+        Call this after `lake update` (which clones Mathlib into
+        `.lake/packages/mathlib/`) and before `get_mathlib_cache()` / `build()`.
+
+        Returns a "<old> -> <new>" note if the toolchain was changed, or None
+        if it was already in sync or Mathlib's toolchain could not be found.
+        """
+        mathlib_tc = self.repo_path / ".lake" / "packages" / "mathlib" / "lean-toolchain"
+        root_tc = self.repo_path / "lean-toolchain"
+        if not mathlib_tc.exists():
+            return None
+        want = mathlib_tc.read_text(encoding="utf-8").strip()
+        have = root_tc.read_text(encoding="utf-8").strip() if root_tc.exists() else ""
+        if not want or want == have:
+            return None
+        root_tc.write_text(want + "\n", encoding="utf-8")
+        return f"{have or '(none)'} -> {want}"
+
     def add_mathlib_dependency(self, if_absent: bool = True) -> bool:
         """Ensure Mathlib is declared in the lakefile.
 
