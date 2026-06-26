@@ -1,0 +1,35 @@
+# Keep the build context small and avoid baking host artifacts into the image.
+.git
+.gitignore
+
+# Python build / cache artifacts
+**/__pycache__/
+**/*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local virtualenvs
+.venv/
+venv/
+env/
+
+# Node artifacts (the dashboard is built inside the image)
+**/node_modules/
+src/archon/ui/client/dist/
+
+# Docs images (not needed at build time)
+docs/*.png
+
+# Docker / compose local files
+docker-compose.override.yml
+.env
+
+# Editor / OS noise
+.idea/
+.vscode/
+.DS_Store
