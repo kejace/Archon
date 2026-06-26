@@ -16,4 +16,5 @@ src/archon/ui/.archon-ui/
 uv.lock
 .claude 
 .pytest_cache/
-.ruff_cache/workspace/
+.ruff_cache/
+workspace/
