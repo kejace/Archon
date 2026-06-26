@@ -1,0 +1,47 @@
+# Archon containerized runtime.
+#
+#   docker compose build
+#   mkdir -p workspace
+#   docker compose run --rm archon          # interactive shell in /workspace
+#
+# Inside the container, authenticate Claude Code (run `claude` once, or set
+# ANTHROPIC_API_KEY in .env), then:
+#   archon init /workspace/myproject
+#   archon loop /workspace/myproject
+# The dashboard auto-starts on a free port in 8080-8099, published to the host.
+
+services:
+  archon:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: archon:latest
+    # Mount your Lean project(s) here. Anything under ./workspace on the host
+    # is visible at /workspace in the container.
+    volumes:
+      - ./workspace:/workspace
+      # Persist Claude Code auth (and Archon's per-user state) across runs so
+      # you don't re-login every `docker compose run`.
+      - archon-claude:/home/archon/.claude
+    # Dashboard picks a free port in this range and prints the URL.
+    ports:
+      - "8080-8099:8080-8099"
+    # API keys: copy .env.example to .env and fill in what you use. All are
+    # optional except the Anthropic credential needed to drive Claude Code
+    # (you can instead `claude` login interactively, persisted via the volume).
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      MOONSHOT_API_KEY: ${MOONSHOT_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+    # Interactive: archon init / discuss prompt for input.
+    stdin_open: true
+    tty: true
+
+volumes:
+  archon-claude:
