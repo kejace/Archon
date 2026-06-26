@@ -25,6 +25,10 @@ src/archon/ui/client/dist/
 # Docs images (not needed at build time)
 docs/*.png
 
+# Mounted-project workspace (created at runtime; can be many GB of Lean/Mathlib
+# build artifacts). Never bake it into the image or the build context.
+workspace/
+
 # Docker / compose local files
 docker-compose.override.yml
 .env

@@ -103,5 +103,10 @@ RUN printf 'export PATH="/opt/archon-venv/bin:$HOME/.elan/bin:$HOME/.local/bin:$
     && chmod 0644 /etc/profile.d/archon.sh
 USER ${USERNAME}
 
+# Bind the dashboard to all interfaces so the published port (compose maps
+# 8080-8099) is reachable from the host browser. The server otherwise defaults
+# to `::`, which Docker's IPv4 port-forwarding doesn't reliably reach.
+ENV ARCHON_DASHBOARD_HOST=0.0.0.0
+
 WORKDIR /workspace
 CMD ["bash"]

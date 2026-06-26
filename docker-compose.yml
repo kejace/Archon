@@ -33,6 +33,10 @@ services:
       - path: .env
         required: false
     environment:
+      # Bind the dashboard to all interfaces so the published ports above are
+      # reachable from the host browser (the image sets this too; kept here for
+      # visibility / `docker run` parity).
+      ARCHON_DASHBOARD_HOST: 0.0.0.0
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
