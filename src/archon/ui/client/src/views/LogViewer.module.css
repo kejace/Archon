@@ -437,7 +437,7 @@
 }
 .filterSheet .filterChips { gap: 8px; }
 
-@media (max-width: 640px) {
+@media (max-width: 640px), (max-height: 500px) and (pointer: coarse) {
   .rootMobile { height: 100%; display: block; }
   .rootMobile .sidebar {
     width: 100%;
