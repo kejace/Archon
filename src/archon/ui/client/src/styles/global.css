@@ -81,6 +81,15 @@ a { color: var(--blue); text-decoration: none; }
 a:hover { text-decoration: underline; }
 code, pre { font-family: var(--font-mono); }
 
+/* Touch ergonomics: remove the legacy 300ms tap delay and double-tap-zoom
+ * on controls (not on scrollable content), and kill the grey iOS tap flash
+ * on app chrome — views provide their own :active / selected feedback. */
+button, a, select, [role="button"], [role="tab"], summary, label {
+  touch-action: manipulation;
+}
+.bottom-tab, .nav-link { -webkit-tap-highlight-color: transparent; }
+.bottom-tab:active { background: var(--bg-secondary); }
+
 /* Scrollbars — slightly more visible thumb than before. The previous
  * 6px on transparent track was too subtle on light surfaces. */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
