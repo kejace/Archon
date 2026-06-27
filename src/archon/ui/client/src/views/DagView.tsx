@@ -28,6 +28,7 @@ import { useGitLog, useBlueprintChapters, type GitCommit } from '../hooks/useGit
 import { GitTimeline } from '../components/GitTimeline';
 import { buildBlueprintModel, TexFragment } from '../components/BlueprintDoc';
 import { isStaticDashboard } from '../lib/staticMode';
+import { useTheme } from '../hooks/useTheme';
 // Effort/status colour scale (mirrors leandag.exporters) + per-project encoding
 // for the multi-project union overlay.
 import {
@@ -37,7 +38,35 @@ import {
 
 interface ProjectInfo { name: string; path: string; colorIdx: number; }
 
-function visNode(n: DagNode, maxEffort: number) {
+// ── Canvas neutrals ──────────────────────────────────────────────────────────
+// vis-network draws to a <canvas>, so node/edge colours are literal strings the
+// library paints directly — they can't be `var(--…)`. The status/effort fills
+// (green/blue/red/amber) carry meaning and stay constant across themes; only
+// the *neutral* chrome (label text, edges, dimmed/greyed nodes, the selection
+// ring) needs to flip so it reads on a dark canvas. Resolved by data-theme and
+// threaded through the node/edge builders + the re-skin helpers below.
+export interface CanvasNeutrals {
+  nodeText: string; selectBorder: string;
+  dimFill: string; dimBorder: string; dimText: string;
+  edgeBase: string; edgeHi: string;
+  edgeOn: string; edgeOnHi: string; edgeOff: string;
+}
+const CANVAS_NEUTRALS: Record<'light' | 'dark', CanvasNeutrals> = {
+  light: {
+    nodeText: '#334155', selectBorder: '#0f172a',
+    dimFill: '#e5e7eb', dimBorder: '#d1d5db', dimText: '#cbd5e1',
+    edgeBase: '#cbd5e1', edgeHi: '#64748b',
+    edgeOn: '#475569', edgeOnHi: '#334155', edgeOff: '#edf0f4',
+  },
+  dark: {
+    nodeText: '#c9d2dc', selectBorder: '#e6edf3',
+    dimFill: '#21262d', dimBorder: '#30363d', dimText: '#484f58',
+    edgeBase: '#30363d', edgeHi: '#6b7785',
+    edgeOn: '#8b98a5', edgeOnHi: '#c9d2dc', edgeOff: '#1c2128',
+  },
+};
+
+function visNode(n: DagNode, maxEffort: number, N: CanvasNeutrals) {
   const isAux = n.type === 'lean_aux';
   const isInf = n.effort_local === null || n.effort_local === undefined;
   // \mathlibok is "done" too, but blue so it reads as distinct from green proofs.
@@ -51,9 +80,9 @@ function visNode(n: DagNode, maxEffort: number) {
     label,
     shape: 'dot',
     size: isInf ? 16 : 11,
-    color: { background, border, highlight: { background, border: '#0f172a' } },
+    color: { background, border, highlight: { background, border: N.selectBorder } },
     borderWidth: 2,
-    font: { size: 11, multi: false, face: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: '#334155' },
+    font: { size: 11, multi: false, face: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: N.nodeText },
     shapeProperties: isAux ? { borderDashes: [3, 3] } : {},
   };
 }
@@ -63,8 +92,8 @@ function visNode(n: DagNode, maxEffort: number) {
 // custom shape. `dimRef` lets the cone/highlight machinery grey out nodes
 // outside the active set on redraw (custom shapes ignore DataSet colour
 // updates, so dimming is read live from the ref instead).
-function unionVisNode(n: DagNode, maxEffort: number, ringColors: string[], dimRef: { current: Set<string> | null }) {
-  const base = visNode(n, maxEffort);
+function unionVisNode(n: DagNode, maxEffort: number, ringColors: string[], dimRef: { current: Set<string> | null }, N: CanvasNeutrals) {
+  const base = visNode(n, maxEffort, N);
   const fill = (base.color as { background: string }).background;
   const isInf = n.effort_local === null || n.effort_local === undefined;
   const r = isInf ? 14 : 10;
@@ -79,21 +108,21 @@ function unionVisNode(n: DagNode, maxEffort: number, ringColors: string[], dimRe
       drawNode: () => {
         const dim = dimRef.current ? !dimRef.current.has(n.id) : false;
         ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI);
-        ctx.fillStyle = dim ? '#e5e7eb' : fill; ctx.fill();
+        ctx.fillStyle = dim ? N.dimFill : fill; ctx.fill();
         const m = ring.length;
         const gap = m > 1 ? 0.16 : 0; // small wedge gap so segments read as distinct
         ctx.lineWidth = m > 1 ? 4 : 3;
         for (let i = 0; i < m; i++) {
           const a0 = -Math.PI / 2 + (i / m) * 2 * Math.PI + gap / 2;
           const a1 = -Math.PI / 2 + ((i + 1) / m) * 2 * Math.PI - gap / 2;
-          ctx.beginPath(); ctx.strokeStyle = dim ? '#d1d5db' : ring[i];
+          ctx.beginPath(); ctx.strokeStyle = dim ? N.dimBorder : ring[i];
           ctx.arc(x, y, r, a0, a1); ctx.stroke();
         }
         if (state.selected) {
-          ctx.lineWidth = 2.5; ctx.strokeStyle = '#0f172a';
+          ctx.lineWidth = 2.5; ctx.strokeStyle = N.selectBorder;
           ctx.beginPath(); ctx.arc(x, y, r + 4, 0, 2 * Math.PI); ctx.stroke();
         }
-        ctx.fillStyle = dim ? '#cbd5e1' : '#334155';
+        ctx.fillStyle = dim ? N.dimText : N.nodeText;
         ctx.font = "11px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
         ctx.textAlign = 'center'; ctx.textBaseline = 'top';
         ctx.fillText(short, x, y + r + 2);
@@ -188,6 +217,10 @@ export default function DagView() {
   const { data: gitData } = useGitLog();
   const commits = gitData?.commits ?? [];
   const navigate = useNavigate();
+  // Canvas neutrals follow the active theme (status/effort fills don't — they
+  // encode data). Threaded into the node/edge builders + re-skin helpers below.
+  const { theme } = useTheme();
+  const N = useMemo(() => CANVAS_NEUTRALS[theme], [theme]);
 
   // ── Multi-project union overlay ───────────────────────────────────────────
   // The base view (above) is the current project. Optionally overlay peer
@@ -403,10 +436,10 @@ export default function DagView() {
   const baseVisNodes = useMemo(() => uniqueNodes.map((n) => {
     if (merged.active) {
       const ring = (merged.nodeProjects.get(n.id) ?? [0]).map((idx) => projectStyle(idx).border);
-      return unionVisNode(n, maxEffort, ring, dimRef);
+      return unionVisNode(n, maxEffort, ring, dimRef, N);
     }
-    return visNode(n, maxEffort);
-  }), [uniqueNodes, maxEffort, merged.active, merged.nodeProjects]);
+    return visNode(n, maxEffort, N);
+  }), [uniqueNodes, maxEffort, merged.active, merged.nodeProjects, N]);
   const baseVisById = useMemo(() => {
     const m = new Map<string, any>();
     for (const vn of baseVisNodes) m.set(vn.id as string, vn);
@@ -594,12 +627,12 @@ export default function DagView() {
     if (merged.active) { dimRef.current = directDeps; netRef.current?.redraw(); }
     else nodesDS.update((nodesDS.getIds() as string[]).map((nid) =>
       directDeps.has(nid) ? baseVisById.get(nid)
-        : { id: nid, color: { background: '#e5e7eb', border: '#d1d5db' }, font: { color: '#cbd5e1' } }));
+        : { id: nid, color: { background: N.dimFill, border: N.dimBorder }, font: { color: N.dimText } }));
     edgesDS.update((edgesDS.get() as any[]).map((e) => {
       const on = e.to === id && directDeps.has(e.from);
-      return { id: e.id, color: on ? { color: '#475569', highlight: '#334155' } : { color: '#edf0f4' }, width: on ? 2.5 : 1 };
+      return { id: e.id, color: on ? { color: N.edgeOn, highlight: N.edgeOnHi } : { color: N.edgeOff }, width: on ? 2.5 : 1 };
     }));
-  }, [directDepsOf, baseVisById, merged.active]);
+  }, [directDepsOf, baseVisById, merged.active, N]);
 
   // Base skin (no node cone selected): honour the highlight overlay if one is
   // active (dim non-matches but keep them on canvas), else full colour.
@@ -613,25 +646,25 @@ export default function DagView() {
       dimRef.current = hl;
       netRef.current?.redraw();
       edgesDS.update((edgesDS.get() as any[]).map((e) => {
-        if (!hl) return { id: e.id, color: { color: '#cbd5e1', highlight: '#64748b' }, width: 1 };
+        if (!hl) return { id: e.id, color: { color: N.edgeBase, highlight: N.edgeHi }, width: 1 };
         const on = hl.has(e.from) && hl.has(e.to);
-        return { id: e.id, color: on ? { color: '#475569', highlight: '#334155' } : { color: '#edf0f4' }, width: on ? 2 : 1 };
+        return { id: e.id, color: on ? { color: N.edgeOn, highlight: N.edgeOnHi } : { color: N.edgeOff }, width: on ? 2 : 1 };
       }));
       return;
     }
     if (!hl) {
       nodesDS.update((nodesDS.getIds() as string[]).map((nid) => baseVisById.get(nid)).filter(Boolean));
-      edgesDS.update((edgesDS.get() as any[]).map((e) => ({ id: e.id, color: { color: '#cbd5e1', highlight: '#64748b' }, width: 1 })));
+      edgesDS.update((edgesDS.get() as any[]).map((e) => ({ id: e.id, color: { color: N.edgeBase, highlight: N.edgeHi }, width: 1 })));
       return;
     }
     nodesDS.update((nodesDS.getIds() as string[]).map((nid) =>
       hl.has(nid) ? baseVisById.get(nid)
-        : { id: nid, color: { background: '#e5e7eb', border: '#d1d5db' }, font: { color: '#cbd5e1' } }).filter(Boolean));
+        : { id: nid, color: { background: N.dimFill, border: N.dimBorder }, font: { color: N.dimText } }).filter(Boolean));
     edgesDS.update((edgesDS.get() as any[]).map((e) => {
       const on = hl.has(e.from) && hl.has(e.to);
-      return { id: e.id, color: on ? { color: '#475569', highlight: '#334155' } : { color: '#edf0f4' }, width: on ? 2 : 1 };
+      return { id: e.id, color: on ? { color: N.edgeOn, highlight: N.edgeOnHi } : { color: N.edgeOff }, width: on ? 2 : 1 };
     }));
-  }, [baseVisById, highlightSet, merged.active]);
+  }, [baseVisById, highlightSet, merged.active, N]);
   const clearHighlight = applyBaseStyling;
   const applyBaseRef = useRef(applyBaseStyling);
   applyBaseRef.current = applyBaseStyling;
@@ -726,7 +759,7 @@ export default function DagView() {
       {
         layout: { improvedLayout: uniqueNodes.length <= 250 },
         physics: { enabled: false },
-        edges: { smooth: false, color: { color: '#cbd5e1', highlight: '#64748b' }, arrows: { to: { scaleFactor: 0.55 } }, width: 1 },
+        edges: { smooth: false, color: { color: N.edgeBase, highlight: N.edgeHi }, arrows: { to: { scaleFactor: 0.55 } }, width: 1 },
         nodes: { shape: 'dot' },
         interaction: { hover: true, tooltipDelay: 150, zoomView: false },
       },
@@ -745,11 +778,22 @@ export default function DagView() {
   }, [ready, uniqueNodes.length]);
 
   // ── Apply the visible set to the canvas whenever filters/data change ───────
+  const topoSigRef = useRef('');
   useEffect(() => {
     const net = netRef.current, nodesDS = nodesDSRef.current, edgesDS = edgesDSRef.current;
     if (!net || !nodesDS || !edgesDS) return;
     const nodes = baseVisNodes.filter((n) => visibleSet.has(n.id as string));
     const es = edges.filter((e) => visibleSet.has(e.from) && visibleSet.has(e.to)).map((e, i) => ({ id: i, from: e.from, to: e.to, arrows: 'to' }));
+    // When only the node/edge *skins* changed (e.g. a theme toggle re-built
+    // baseVisNodes with new neutrals) but the topology is identical, update in
+    // place so the layout doesn't re-settle and the viewport stays put.
+    const sig = nodes.length + '#' + nodes.map((n) => n.id).join(',') + '|' + es.map((e) => `${e.from}>${e.to}`).join(',');
+    if (sig === topoSigRef.current) {
+      nodesDS.update(nodes);
+      if (selIdRef.current) doJump(); else applyBaseRef.current();
+      return;
+    }
+    topoSigRef.current = sig;
     nodesDS.clear(); edgesDS.clear();
     nodesDS.add(nodes); edgesDS.add(es);
     if (nodes.length > 1) net.setOptions({ physics: PHYSICS_OPTS as any });
@@ -842,7 +886,7 @@ export default function DagView() {
         .dv-stats .dv-qrow { cursor: pointer; border-radius: 4px; padding-left: 3px; margin-left: -3px; }
         .dv-stats .dv-qrow:hover { background: var(--bg-tertiary); }
         .dv-stats .dv-qrow.dv-qon { background: rgba(59,130,246,0.16); }
-        .dv-select.dv-select-on { border-color: #3b82f6; color: #1d4ed8; font-weight: 600; }
+        .dv-select.dv-select-on { border-color: var(--blue); color: var(--blue); font-weight: 600; }
       `}</style>
 
       {/* Toolbar */}
@@ -1292,7 +1336,7 @@ const DV_CSS = `
 .dv-root .badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:700; letter-spacing:.04em; }
 .dv-root .badge-type { background:var(--accent-bg); color:var(--accent-text); border:1px solid var(--accent-ring); }
 .dv-root .badge-proved { background:rgba(16,185,129,.12); color:var(--green); border:1px solid rgba(16,185,129,.3); }
-.dv-root .badge-mathlib { background:rgba(59,130,246,.12); color:#2563eb; border:1px solid rgba(59,130,246,.3); }
+.dv-root .badge-mathlib { background:rgba(59,130,246,.12); color:var(--blue); border:1px solid rgba(59,130,246,.3); }
 .dv-root .badge-sorry { background:rgba(234,88,12,.10); color:var(--orange); border:1px solid rgba(234,88,12,.28); }
 .dv-root .badge-unproved { background:rgba(220,38,38,.08); color:var(--red); border:1px solid rgba(220,38,38,.25); }
 .dv-root .node-title { font-size:15px; font-weight:600; color:var(--text-primary); line-height:1.35; margin-bottom:5px; overflow-wrap:anywhere; }

@@ -17,13 +17,13 @@
   border-radius: 0 4px 4px 0;
 }
 
-.env-definition { border-left-color: #6f42c1; }
-.env-theorem { border-left-color: #0366d6; }
-.env-lemma { border-left-color: #00868a; }
-.env-proposition { border-left-color: #0366d6; }
-.env-corollary { border-left-color: #0366d6; }
-.env-remark { border-left-color: #b08800; }
-.env-example { border-left-color: #b08800; background: rgba(176, 136, 0, 0.04); }
+.env-definition { border-left-color: var(--syntax-purple); }
+.env-theorem { border-left-color: var(--syntax-blue); }
+.env-lemma { border-left-color: var(--syntax-teal); }
+.env-proposition { border-left-color: var(--syntax-blue); }
+.env-corollary { border-left-color: var(--syntax-blue); }
+.env-remark { border-left-color: var(--syntax-gold); }
+.env-example { border-left-color: var(--syntax-gold); background: rgba(176, 136, 0, 0.04); }
 .env-proof {
   border-left-color: var(--border);
   background: transparent;
@@ -53,7 +53,7 @@
   border-radius: 3px;
 }
 .badgeNotReady {
-  color: #e36209;
+  color: var(--syntax-orange);
   font-size: 10px;
   font-weight: 600;
   background: rgba(227, 98, 9, 0.08);

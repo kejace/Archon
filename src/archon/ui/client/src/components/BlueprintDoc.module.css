@@ -26,12 +26,12 @@
   border-radius: 0 5px 5px 0;
   scroll-margin-top: 16px;
 }
-.env_definition { border-left-color: #6f42c1; }
-.env_theorem, .env_proposition, .env_corollary { border-left-color: #0366d6; }
-.env_lemma { border-left-color: #00868a; }
-.env_remark, .env_notation, .env_convention { border-left-color: #b08800; }
-.env_example { border-left-color: #b08800; background: rgba(176,136,0,0.04); }
-.env_conjecture { border-left-color: #cb2431; }
+.env_definition { border-left-color: var(--syntax-purple); }
+.env_theorem, .env_proposition, .env_corollary { border-left-color: var(--syntax-blue); }
+.env_lemma { border-left-color: var(--syntax-teal); }
+.env_remark, .env_notation, .env_convention { border-left-color: var(--syntax-gold); }
+.env_example { border-left-color: var(--syntax-gold); background: rgba(176,136,0,0.04); }
+.env_conjecture { border-left-color: var(--syntax-red); }
 .envProof { border-left-color: var(--border-strong); background: transparent; padding-left: 12px; }
 
 .envHead {
@@ -46,7 +46,7 @@
 
 .badgeOk { color: var(--green); font-size: 10px; font-weight: 600; background: rgba(40,167,69,0.1); padding: 1px 5px; border-radius: 3px; }
 .badgeMathlib { color: var(--blue); font-size: 10px; font-weight: 600; background: rgba(3,102,214,0.1); padding: 1px 5px; border-radius: 3px; }
-.badgeNot { color: #e36209; font-size: 10px; font-weight: 600; background: rgba(227,98,9,0.08); padding: 1px 5px; border-radius: 3px; }
+.badgeNot { color: var(--syntax-orange); font-size: 10px; font-weight: 600; background: rgba(227,98,9,0.08); padding: 1px 5px; border-radius: 3px; }
 
 /* Lean code chips --------------------------------------------------- */
 .leanWrap { display: inline-block; }
@@ -76,11 +76,11 @@
   background: var(--bg-primary); border: 1px solid var(--border); border-radius: 5px;
   white-space: pre; color: var(--text-primary);
 }
-.hlKw { color: #cf222e; }
-.hlTac { color: #8250df; }
-.hlTy { color: #0550ae; }
-.hlNum { color: #0a7d33; }
-.hlStr { color: #0a7d33; }
+.hlKw { color: var(--syntax-red); }
+.hlTac { color: var(--syntax-purple); }
+.hlTy { color: var(--syntax-blue); }
+.hlNum { color: var(--syntax-green); }
+.hlStr { color: var(--syntax-green); }
 .hlComment { color: var(--text-muted); font-style: italic; }
 
 /* \uses dependency tags --------------------------------------------- */
@@ -92,12 +92,12 @@
   padding: 0 5px; border-radius: 10px;
 }
 .usesChip:hover { background: rgba(3,102,214,0.14); }
-.usesUnknown { color: #e36209; background: rgba(227,98,9,0.07); border-color: rgba(227,98,9,0.2); }
+.usesUnknown { color: var(--syntax-orange); background: rgba(227,98,9,0.07); border-color: rgba(227,98,9,0.2); }
 
 /* References --------------------------------------------------------- */
 .ref { color: var(--blue); text-decoration: none; font-variant-numeric: tabular-nums; }
 .ref:hover { text-decoration: underline; }
-.refBroken { color: #e36209; font-weight: 600; }
+.refBroken { color: var(--syntax-orange); font-weight: 600; }
 
 /* Lists ------------------------------------------------------------- */
 .list { margin: 6px 0 6px 18px; padding: 0; }

@@ -26,7 +26,9 @@
 }
 .errorBlock {
   margin: 0; padding: 6px 8px;
-  background: #fff5f5; border: 1px solid #fecaca; border-radius: 3px;
+  background: color-mix(in srgb, var(--red) 7%, var(--bg-primary));
+  border: 1px solid color-mix(in srgb, var(--red) 35%, var(--bg-primary));
+  border-radius: 3px;
   font-family: var(--font-mono); font-size: 11px;
   color: var(--red); white-space: pre-wrap; word-break: break-word;
 }
