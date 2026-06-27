@@ -27,6 +27,8 @@ import { useDag, useUnionDags, useDagLastModified, type DagNode, type FileMod } 
 import { useGitLog, useBlueprintChapters, type GitCommit } from '../hooks/useGitLog';
 import { GitTimeline } from '../components/GitTimeline';
 import { buildBlueprintModel, TexFragment } from '../components/BlueprintDoc';
+import { useIsMobile, useIsTouch } from '../hooks/useMediaQuery';
+import { Sheet } from '../components/mobile/Sheet';
 // Effort/status colour scale (mirrors leandag.exporters) + per-project encoding
 // for the multi-project union overlay.
 import {
@@ -276,6 +278,13 @@ export default function DagView() {
   const [effRange, setEffRange] = useState<[number, number]>([0, Infinity]);
   const [fileSel, setFileSel] = useState<string>('');
   const [typeSel, setTypeSel] = useState<string>('');
+
+  // ── Mobile: filters + node detail become sheets so the graph is the hero ──
+  const isMobile = useIsMobile();
+  const isTouch = useIsTouch();
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  // Stats overlay would cover a phone-width canvas — start it collapsed there.
+  useEffect(() => { if (isMobile) setStatsOpen(false); }, [isMobile]);
 
   // ── Derived graph structures ──────────────────────────────────────────────
   const macros = useMemo(() => (data?.meta?.macros ?? {}) as Record<string, string>, [data]);
@@ -719,7 +728,10 @@ export default function DagView() {
         physics: { enabled: false },
         edges: { smooth: false, color: { color: '#cbd5e1', highlight: '#64748b' }, arrows: { to: { scaleFactor: 0.55 } }, width: 1 },
         nodes: { shape: 'dot' },
-        interaction: { hover: true, tooltipDelay: 150, zoomView: false },
+        // On touch devices enable vis-network's native pinch-to-zoom (the
+        // desktop build keeps zoomView off and uses the custom ctrl+wheel
+        // handler instead — there's no wheel to intercept on a phone).
+        interaction: { hover: !isTouch, tooltipDelay: 150, zoomView: isTouch },
       },
     );
     netRef.current = network;
@@ -816,6 +828,19 @@ export default function DagView() {
   const dups = m.duplicate_ids ?? [];
   const fmt = (v: number) => v.toLocaleString('en-US');
 
+  // Node inspector — docked sidebar on desktop, bottom sheet on mobile.
+  const nodePanel = sel ? (
+    <NodePanel n={sel} ancestors={ancestorsOf(selId)} macros={macros} focused={focus === selId}
+      labels={bpLabels} lastMod={lastMod}
+      presence={selPresence}
+      onGoTo={goTo} onToggleFocus={() => (focus === selId ? setFocus(null) : (setFocus(selId), setSelId(selId)))}
+      onOpenBlueprint={(label) => navigate(`/blueprint?focus=${encodeURIComponent(label)}`)}
+      onOpenBlueprintAt={(slug, anchor) => navigate(`/blueprint?slug=${encodeURIComponent(slug)}&anchor=${encodeURIComponent(anchor)}`)}
+      onOpenLogs={(iter) => navigate(`/logs?iter=${encodeURIComponent(iter)}`)}
+      onOpenDiffs={(iter) => navigate(`/diffs?iter=${encodeURIComponent(iter)}`)}
+      onOpenDiffsFile={(slug) => navigate(`/diffs?file=${encodeURIComponent(slug)}`)} />
+  ) : null;
+
   // A stat row that doubles as a graph filter (click to apply, click again to clear).
   const qRow = (label: string, value: number, q: DagQuery, vClass = '') => (
     <div className={`row dv-qrow ${query === q ? 'dv-qon' : ''}`}
@@ -863,11 +888,18 @@ export default function DagView() {
         {dups.length > 0 && (
           <span className="dv-warn" title={dups.join('\n')}>⚠ {dups.length} duplicate label{dups.length > 1 ? 's' : ''}</span>
         )}
-        <button className="dv-btn" style={{ marginLeft: 'auto' }} onClick={() => refetch()} disabled={isFetching}>{isFetching ? 'Rebuilding…' : 'Rebuild'}</button>
+        {isMobile && (
+          <button className="dv-btn dv-filters-btn" style={{ marginLeft: 'auto' }} onClick={() => setFiltersOpen(true)}>
+            ⚲ Filters{(query !== 'all' || typeSel || fileSel || nodeset !== 'union' || componentSel !== null || chapterSel || showOrphans) ? ' ·' : ''}
+          </button>
+        )}
+        <button className="dv-btn" style={isMobile ? undefined : { marginLeft: 'auto' }} onClick={() => refetch()} disabled={isFetching}>{isFetching ? 'Rebuilding…' : 'Rebuild'}</button>
       </div>
 
-      {/* Controls */}
-      <div className="dv-controls">
+      {/* Controls — inline on desktop, in a bottom "Filters" sheet on mobile. */}
+      {(() => {
+        const controlsInner = (
+          <>
         <input className="dv-input" type="text" list="dv-node-ids" placeholder="Search node id…" autoComplete="off" spellCheck={false}
           value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') commitSearch(); }} onBlur={commitSearch} />
         <datalist id="dv-node-ids">{[...allNodes.keys()].sort().map((id) => <option key={id} value={id} />)}</datalist>
@@ -932,7 +964,16 @@ export default function DagView() {
           </span>
         )}
         <button className="dv-btn" onClick={resetView}>Reset view</button>
-      </div>
+          </>
+        );
+        return isMobile ? (
+          <Sheet open={filtersOpen} onClose={() => setFiltersOpen(false)} side="bottom" title="Filters & search">
+            <div className="dv-controls dv-controls-sheet">{controlsInner}</div>
+          </Sheet>
+        ) : (
+          <div className="dv-controls">{controlsInner}</div>
+        );
+      })()}
 
       {/* Main */}
       <div className="dv-main">
@@ -968,24 +1009,24 @@ export default function DagView() {
           </button>
         )}
 
-        {/* Sidebar */}
-        <div className="dv-resize-v" onMouseDown={sideResize.onMouseDown} title="Drag to resize" />
-        <aside className="dv-sidebar" style={{ width: sideResize.size }}>
-          {!sel ? (
-            <div className="dv-sidebar-empty"><p>Click a node to inspect it</p></div>
-          ) : (
-            <NodePanel n={sel} ancestors={ancestorsOf(selId)} macros={macros} focused={focus === selId}
-              labels={bpLabels} lastMod={lastMod}
-              presence={selPresence}
-              onGoTo={goTo} onToggleFocus={() => (focus === selId ? setFocus(null) : (setFocus(selId), setSelId(selId)))}
-              onOpenBlueprint={(label) => navigate(`/blueprint?focus=${encodeURIComponent(label)}`)}
-              onOpenBlueprintAt={(slug, anchor) => navigate(`/blueprint?slug=${encodeURIComponent(slug)}&anchor=${encodeURIComponent(anchor)}`)}
-              onOpenLogs={(iter) => navigate(`/logs?iter=${encodeURIComponent(iter)}`)}
-              onOpenDiffs={(iter) => navigate(`/diffs?iter=${encodeURIComponent(iter)}`)}
-              onOpenDiffsFile={(slug) => navigate(`/diffs?file=${encodeURIComponent(slug)}`)} />
-          )}
-        </aside>
+        {/* Sidebar (desktop) — on mobile the node inspector is a bottom sheet. */}
+        {!isMobile && (
+          <>
+            <div className="dv-resize-v" onMouseDown={sideResize.onMouseDown} title="Drag to resize" />
+            <aside className="dv-sidebar" style={{ width: sideResize.size }}>
+              {!sel ? (
+                <div className="dv-sidebar-empty"><p>Click a node to inspect it</p></div>
+              ) : nodePanel}
+            </aside>
+          </>
+        )}
       </div>
+
+      {isMobile && (
+        <Sheet open={!!sel} onClose={() => setSelId('')} side="bottom" title="Node" className="dv-node-sheet">
+          {nodePanel}
+        </Sheet>
+      )}
 
       {/* Temporal axis — same commit rail as the Graph view. Click a commit to
           rebuild the DAG as it was at that commit (in-memory, never cached). */}
@@ -1340,4 +1381,46 @@ const DV_CSS = `
 .dv-root .dv-shared-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .dv-root .dv-shared-ok { font-size:10px; color:var(--green); font-weight:600; }
 .dv-root .dv-shared-todo { font-size:10px; color:var(--text-muted); }
+
+/* ─── Mobile (≤640px) ─────────────────────────────────────────────────
+ * Make the graph the hero: the verbose legends and the whole controls row
+ * move out of the way (controls into the "Filters" bottom sheet), the
+ * mouse-only resize handles are dropped, and the git rail is compact. */
+@media (max-width: 640px) {
+  .dv-toolbar { min-height:0; padding:7px 12px; gap:8px 10px; }
+  /* Legends are space-hungry and self-evident enough on a phone — hide the
+   * symbol + project legends; keep the brand, node count, and actions. */
+  .dv-toolbar .dv-legend, .dv-toolbar .dv-sym-legend, .dv-toolbar .dv-proj-legend { display:none; }
+  .dv-stat { font-size:11px; flex:1 1 100%; order:3; }
+  .dv-filters-btn { font-weight:600; }
+  /* The graph fills the space the controls row used to take. */
+  .dv-graph { min-height:240px; }
+  /* Resize handles are mouse-only and the panels are sheets now. */
+  .dv-resize-v, .dv-resize-h { display:none; }
+  /* Stats overlay narrower so it never spans a phone width. */
+  .dv-stats { max-width:74vw; }
+  /* Compact git rail. */
+  .dv-git-panel { height:84px !important; }
+
+  /* Controls rendered inside the bottom sheet: stack full-width so every
+   * select / slider / search is comfortably tappable. */
+  .dv-controls-sheet {
+    display:flex; flex-direction:column; align-items:stretch; gap:12px;
+    padding:14px 16px calc(20px + var(--safe-bottom)); background:var(--bg-primary);
+    min-height:0; border:none;
+  }
+  .dv-controls-sheet .dv-input,
+  .dv-controls-sheet .dv-select,
+  .dv-controls-sheet .dv-union { width:100%; max-width:none; min-height:42px; font-size:14px; }
+  .dv-controls-sheet .dv-union > summary { min-height:42px; display:flex; align-items:center; }
+  .dv-controls-sheet .dv-union-panel { position:static; box-shadow:none; border:1px solid var(--border); margin-top:6px; max-height:200px; }
+  .dv-controls-sheet .dv-range { width:100%; padding:6px 10px; }
+  .dv-controls-sheet .dv-range .dv-slider { flex:1; width:auto; height:24px; }
+  .dv-controls-sheet .dv-chk { min-height:42px; font-size:14px; }
+  .dv-controls-sheet .dv-btn { min-height:42px; font-size:14px; }
+  .dv-controls-sheet .dv-pill { align-self:flex-start; }
+
+  /* The node inspector fills its bottom sheet. */
+  .dv-node-sheet .dv-sidebar-content { padding:12px 14px calc(14px + var(--safe-bottom)); }
+}
 `;
