@@ -457,7 +457,7 @@
 }
 .fileSheet { padding: 8px 6px 16px; }
 
-@media (max-width: 640px) {
+@media (max-width: 640px), (max-height: 500px) and (pointer: coarse) {
   .pageMobile { display: block; height: 100%; }
   .pageMobile .sidebar { display: none; }
   .pageMobile .main { height: 100%; }

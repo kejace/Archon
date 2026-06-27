@@ -378,7 +378,7 @@ select:focus {
  * place of the top nav, and content padding that clears both plus the iOS
  * safe areas. Per-view reflow lives in each view's own module.
  * ═══════════════════════════════════════════════════════════════════════ */
-@media (max-width: 640px) {
+@media (max-width: 640px), (max-height: 500px) and (pointer: coarse) {
   body { font-size: 13px; }
 
   .header {

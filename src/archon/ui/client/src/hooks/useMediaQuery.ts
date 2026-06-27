@@ -42,9 +42,17 @@ export function useMediaQuery(query: string): boolean {
   return matches;
 }
 
-/** True on phone-width viewports (≤ 640px). */
+/**
+ * True on phone-class viewports: narrow (≤640px) OR short-and-touch — the
+ * latter catches landscape phones (e.g. 844×390), which are wide but only
+ * ~390px tall, so they want the same graph-hero / sheet-based layout rather
+ * than the desktop chrome. The `pointer: coarse` guard keeps short *desktop*
+ * windows on the desktop layout. Mirrors the media query in the CSS modules.
+ */
 export function useIsMobile(): boolean {
-  return useMediaQuery(`(max-width: ${BP_MOBILE}px)`);
+  return useMediaQuery(
+    `(max-width: ${BP_MOBILE}px), (max-height: 500px) and (pointer: coarse)`,
+  );
 }
 
 /** True on tablet-width viewports (641–1024px). */

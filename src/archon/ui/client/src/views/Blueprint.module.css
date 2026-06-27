@@ -177,7 +177,7 @@
 .tocBtnIcon { font-size: 15px; line-height: 1; }
 .tocSheet { padding: 8px 8px 16px; }
 
-@media (max-width: 640px) {
+@media (max-width: 640px), (max-height: 500px) and (pointer: coarse) {
   .mobileBar {
     display: flex;
     align-items: center;

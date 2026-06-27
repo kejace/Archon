@@ -1446,7 +1446,7 @@ const DV_CSS = `
  * Make the graph the hero: the verbose legends and the whole controls row
  * move out of the way (controls into the "Filters" bottom sheet), the
  * mouse-only resize handles are dropped, and the git rail is compact. */
-@media (max-width: 640px) {
+@media (max-width: 640px), (max-height: 500px) and (pointer: coarse) {
   .dv-toolbar { min-height:0; padding:7px 12px; gap:8px 10px; }
   /* Legends are space-hungry and self-evident enough on a phone — hide the
    * symbol + project legends; keep the brand, node count, and actions. */
