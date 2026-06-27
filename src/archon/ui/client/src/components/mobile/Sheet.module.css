@@ -16,6 +16,7 @@
   flex-direction: column;
   overflow: hidden;
   box-shadow: 0 -2px 24px rgba(15, 23, 42, 0.22);
+  outline: none;
 }
 
 /* Bottom sheet — rounded top, capped height, rises from the bottom. */
