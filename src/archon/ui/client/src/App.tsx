@@ -7,6 +7,7 @@ import DiffPlayback from './views/DiffPlayback';
 import DagView from './views/DagView';
 import Blueprint from './views/Blueprint';
 import { ProjectSwitcher } from './components/ProjectSwitcher';
+import { NAV_ITEMS } from './components/NavIcons';
 // Vite's resolveJsonModule (enabled by default) lets us import the
 // version from package.json so the badge stays in sync with releases
 // without manual updates. If you move package.json or the build setup
@@ -16,13 +17,54 @@ import { version as APP_VERSION } from '../../package.json';
 function ConnectionBanner({ isError }: { isError: boolean }) {
   if (!isError) return null;
   return (
-    <div style={{
-      background: '#dc2626', color: 'white', padding: '6px 16px',
-      fontSize: '13px', textAlign: 'center', fontWeight: 500,
-    }}>
-      ⚠ Cannot reach server — check that <code style={{ background: 'rgba(0,0,0,0.2)', padding: '1px 4px', borderRadius: 3 }}>
-      archon dashboard &lt;project&gt;</code> is running and you're on the correct port
+    <div className="conn-banner">
+      ⚠ Cannot reach server — check that <code>archon dashboard &lt;project&gt;</code> is
+      running and you're on the correct port
     </div>
+  );
+}
+
+/**
+ * Desktop / wide top navigation — text links. Hidden on phones (≤640px) via
+ * CSS, where the bottom tab bar takes over.
+ */
+function TopNav() {
+  return (
+    <nav className="header-nav">
+      {NAV_ITEMS.map(({ to, label, end }) => (
+        <NavLink
+          key={to}
+          to={to}
+          end={end}
+          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+        >
+          {label}
+        </NavLink>
+      ))}
+    </nav>
+  );
+}
+
+/**
+ * Mobile bottom tab bar — icon + short label, thumb-reachable, with safe-area
+ * padding for the iOS home indicator. Always in the DOM; CSS shows it only on
+ * phone-width viewports so there's no layout shift on resize.
+ */
+function BottomNav() {
+  return (
+    <nav className="bottom-nav" aria-label="Primary">
+      {NAV_ITEMS.map(({ to, label, end, Icon }) => (
+        <NavLink
+          key={to}
+          to={to}
+          end={end}
+          className={({ isActive }) => `bottom-tab ${isActive ? 'active' : ''}`}
+        >
+          <Icon className="bottom-tab-icon" />
+          <span className="bottom-tab-label">{label}</span>
+        </NavLink>
+      ))}
+    </nav>
   );
 }
 
@@ -38,14 +80,7 @@ export default function App() {
         </span>
         {project && <span className="project-badge" title={project.path}>{project.name}</span>}
         <ProjectSwitcher />
-        <nav className="header-nav">
-          <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} end>Overview</NavLink>
-          <NavLink to="/dag" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>DAG</NavLink>
-          <NavLink to="/blueprint" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Blueprint</NavLink>
-          <NavLink to="/logs" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Logs</NavLink>
-          <NavLink to="/diffs" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Diffs</NavLink>
-          <NavLink to="/journal" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Journal</NavLink>
-        </nav>
+        <TopNav />
       </header>
       <main className="main-content">
         <Routes>
@@ -60,6 +95,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+      <BottomNav />
     </div>
   );
 }
