@@ -18,6 +18,8 @@ import {
 import { useDag, useDagLastModified } from '../hooks/useDag';
 import { buildBlueprintModel, ChapterView, TitleInline } from '../components/BlueprintDoc';
 import { GitTimeline } from '../components/GitTimeline';
+import { useIsMobile } from '../hooks/useMediaQuery';
+import { Sheet } from '../components/mobile/Sheet';
 import styles from './Blueprint.module.css';
 
 function useDragResize(initial: number, min: number, max: number) {
@@ -147,8 +149,58 @@ export default function Blueprint() {
 
   const openChapters = doc.filter(c => open.has(c.slug));
 
+  const isMobile = useIsMobile();
+  const [tocOpen, setTocOpen] = useState(false);
+  const afterPick = useCallback(() => setTocOpen(false), []);
+  // Close the drawer automatically if the viewport grows back to desktop.
+  useEffect(() => { if (!isMobile) setTocOpen(false); }, [isMobile]);
+
+  // The chapter navigator — shared verbatim by the desktop sidebar and the
+  // mobile drawer so there's a single source of truth for the TOC.
+  const tocBody = (
+    <>
+      {doc.length === 0 && <div className={styles.tocEmpty}>—</div>}
+      {doc.map(ch => (
+        <div key={ch.slug}>
+          <div className={styles.tocChapRow}>
+            <button className={styles.tocCaret} onClick={() => toggleExpand(ch.slug)} title="Show sections">
+              {ch.sections.length ? (expanded.has(ch.slug) ? '▾' : '▸') : '·'}
+            </button>
+            <button className={`${styles.tocChap} ${open.has(ch.slug) ? styles.tocActive : ''}`}
+              onClick={() => { (open.has(ch.slug) ? toggleOpen(ch.slug) : openTo(ch.slug)); afterPick(); }}>
+              <span className={styles.tocNum}>{ch.num}</span>
+              <span className={styles.tocTitle}><TitleInline nodes={ch.title} macros={macros} /></span>
+            </button>
+          </div>
+          {expanded.has(ch.slug) && ch.sections.map(s => (
+            <button key={s.anchor} className={styles.tocSec} style={{ paddingLeft: s.level === 2 ? 26 : 38 }}
+              onClick={() => { openTo(ch.slug, s.anchor); afterPick(); }}>
+              <span className={styles.tocNum}>{s.num}</span>
+              <span className={styles.tocTitle}><TitleInline nodes={s.title} macros={macros} /></span>
+            </button>
+          ))}
+        </div>
+      ))}
+    </>
+  );
+
   return (
     <div className={styles.root}>
+      {/* Mobile-only bar: opens the chapter navigator as a left drawer. */}
+      <div className={styles.mobileBar}>
+        <button className={styles.tocBtn} onClick={() => setTocOpen(true)}>
+          <span className={styles.tocBtnIcon}>☰</span> Contents
+        </button>
+        {selectedSha && <span className={styles.histTag}>@{selectedSha.slice(0, 7)}</span>}
+        {selectedSha && <button className={styles.gitLive} onClick={() => setSelectedSha('')}>← Live</button>}
+      </div>
+
+      {isMobile && (
+        <Sheet open={tocOpen} onClose={() => setTocOpen(false)} side="left" title="Contents">
+          <div className={styles.tocSheet}>{tocBody}</div>
+        </Sheet>
+      )}
+
       <div className={styles.body}>
         {/* Left navigator: chapters (toggle to open) + drill into sections */}
         <aside className={styles.toc}>
@@ -156,28 +208,7 @@ export default function Blueprint() {
             Contents
             {selectedSha && <span className={styles.histTag}>@{selectedSha.slice(0, 7)}</span>}
           </div>
-          {doc.length === 0 && <div className={styles.tocEmpty}>—</div>}
-          {doc.map(ch => (
-            <div key={ch.slug}>
-              <div className={styles.tocChapRow}>
-                <button className={styles.tocCaret} onClick={() => toggleExpand(ch.slug)} title="Show sections">
-                  {ch.sections.length ? (expanded.has(ch.slug) ? '▾' : '▸') : '·'}
-                </button>
-                <button className={`${styles.tocChap} ${open.has(ch.slug) ? styles.tocActive : ''}`}
-                  onClick={() => (open.has(ch.slug) ? toggleOpen(ch.slug) : openTo(ch.slug))}>
-                  <span className={styles.tocNum}>{ch.num}</span>
-                  <span className={styles.tocTitle}><TitleInline nodes={ch.title} macros={macros} /></span>
-                </button>
-              </div>
-              {expanded.has(ch.slug) && ch.sections.map(s => (
-                <button key={s.anchor} className={styles.tocSec} style={{ paddingLeft: s.level === 2 ? 26 : 38 }}
-                  onClick={() => openTo(ch.slug, s.anchor)}>
-                  <span className={styles.tocNum}>{s.num}</span>
-                  <span className={styles.tocTitle}><TitleInline nodes={s.title} macros={macros} /></span>
-                </button>
-              ))}
-            </div>
-          ))}
+          {tocBody}
         </aside>
 
         <main className={styles.reading}>
