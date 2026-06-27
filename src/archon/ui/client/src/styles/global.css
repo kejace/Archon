@@ -66,6 +66,16 @@
     "Helvetica Neue", Arial, sans-serif;
   --font-mono:
     "JetBrains Mono", "SF Mono", "Menlo", "Consolas", monospace;
+
+  /* ─── Layout / responsive tokens ───────────────────────────────────
+   * Breakpoints mirror hooks/useMediaQuery.ts (BP_MOBILE / BP_TABLET).
+   * Safe-area insets fall back to 0 on browsers/devices without notches.
+   * --bottom-nav-h is the phone tab-bar height (content reserves it). */
+  --bottom-nav-h: 54px;
+  --safe-top:    env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left:   env(safe-area-inset-left, 0px);
+  --safe-right:  env(safe-area-inset-right, 0px);
 }
 
 /* ─── Dark theme ─────────────────────────────────────────────────────
@@ -289,4 +299,130 @@ select:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+/* ─── Connection banner ────────────────────────────────────────────── */
+.conn-banner {
+  background: var(--red);
+  color: #fff;
+  padding: 6px 16px;
+  padding-left: max(16px, var(--safe-left));
+  padding-right: max(16px, var(--safe-right));
+  font-size: 13px;
+  text-align: center;
+  font-weight: 500;
+}
+.conn-banner code {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+/* ─── Bottom tab bar (mobile primary nav) ──────────────────────────────
+ * Hidden by default; the phone media query below reveals it. Kept in the
+ * DOM at all sizes so toggling orientation/size causes no remount. */
+.bottom-nav { display: none; }
+
+.bottom-tab {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 2px;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.12s ease;
+}
+.bottom-tab:hover { text-decoration: none; }
+.bottom-tab-icon { flex-shrink: 0; }
+.bottom-tab-label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bottom-tab.active { color: var(--accent-text); }
+.bottom-tab.active .bottom-tab-icon { color: var(--accent); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * RESPONSIVE — phones (≤ 640px, mirrors BP_MOBILE)
+ * The dashboard was built desktop-first; this block reshapes the shell for
+ * a phone: a compact sticky header, a thumb-reachable bottom tab bar in
+ * place of the top nav, and content padding that clears both plus the iOS
+ * safe areas. Per-view reflow lives in each view's own module.
+ * ═══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  body { font-size: 13px; }
+
+  .header {
+    gap: 10px;
+    padding: 8px 12px;
+    padding-top: max(8px, var(--safe-top));
+    padding-left: max(12px, var(--safe-left));
+    padding-right: max(12px, var(--safe-right));
+    position: sticky;
+    top: 0;
+    z-index: 30;
+  }
+  .header h1 { font-size: 15px; }
+  /* Version badge is identity-noise on a small screen — drop it. */
+  .header .version-badge { display: none; }
+  /* The project badge duplicates the switcher's current value; the switcher
+   * itself carries the project name, so hide the static pill and let the
+   * switcher grow to fill the row. */
+  .header .project-badge { display: none; }
+  .header .project-switcher {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Top text nav is replaced by the bottom bar. */
+  .header-nav { display: none; }
+
+  .main-content {
+    padding: 12px;
+    padding-left: max(12px, var(--safe-left));
+    padding-right: max(12px, var(--safe-right));
+    /* Clear the fixed bottom nav so the last row isn't trapped under it. */
+    padding-bottom: calc(var(--bottom-nav-h) + var(--safe-bottom) + 12px);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    background: color-mix(in srgb, var(--bg-primary) 88%, transparent);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    backdrop-filter: saturate(180%) blur(12px);
+    border-top: 1px solid var(--border);
+    padding-bottom: var(--safe-bottom);
+    padding-left: var(--safe-left);
+    padding-right: var(--safe-right);
+    min-height: var(--bottom-nav-h);
+    box-shadow: 0 -1px 8px rgba(15, 23, 42, 0.05);
+  }
+}
+
+/* Slightly tighter chrome on small tablets / split views, but keep the top
+ * nav. Lets the 6 links + switcher coexist without wrapping awkwardly. */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .header { gap: 12px; padding: 9px 14px; }
+  .nav-link { padding: 6px 10px; }
+}
+
+/* Respect users who ask for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
 }

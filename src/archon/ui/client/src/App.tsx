@@ -12,6 +12,7 @@ import ScopeHome from './views/ScopeHome';
 import { ProjectSwitcher } from './components/ProjectSwitcher';
 import { isStaticDashboard } from './lib/staticMode';
 import { getProjectScope, isStaticScope } from './lib/projectScope';
+import { NAV_ITEMS } from './components/NavIcons';
 // Vite's resolveJsonModule (enabled by default) lets us import the
 // version from package.json so the badge stays in sync with releases
 // without manual updates. If you move package.json or the build setup
@@ -22,12 +23,9 @@ function ConnectionBanner({ isError }: { isError: boolean }) {
   if (isStaticDashboard()) return null;
   if (!isError) return null;
   return (
-    <div style={{
-      background: 'var(--red)', color: 'white', padding: '6px 16px',
-      fontSize: '13px', textAlign: 'center', fontWeight: 500,
-    }}>
-      ⚠ Cannot reach server — check that <code style={{ background: 'rgba(0,0,0,0.2)', padding: '1px 4px', borderRadius: 3 }}>
-      archon dashboard &lt;project&gt;</code> is running and you're on the correct port
+    <div className="conn-banner">
+      ⚠ Cannot reach server — check that <code>archon dashboard &lt;project&gt;</code> is
+      running and you're on the correct port
     </div>
   );
 }
@@ -45,6 +43,31 @@ function ThemeToggle() {
     >
       {isDark ? '☀' : '☾'}
     </button>
+  );
+}
+
+/**
+ * Mobile bottom tab bar — icon + short label, thumb-reachable, with safe-area
+ * padding for the iOS home indicator. Always in the DOM; CSS shows it only on
+ * phone-width viewports so there's no layout shift on resize. Uses the core
+ * NAV_ITEMS; the richer desktop nav (Scope Home / Code / static toggles) lives
+ * inline in the header and is hidden on phones via CSS.
+ */
+function BottomNav() {
+  return (
+    <nav className="bottom-nav" aria-label="Primary">
+      {NAV_ITEMS.map(({ to, label, end, Icon }) => (
+        <NavLink
+          key={to}
+          to={to}
+          end={end}
+          className={({ isActive }) => `bottom-tab ${isActive ? 'active' : ''}`}
+        >
+          <Icon className="bottom-tab-icon" />
+          <span className="bottom-tab-label">{label}</span>
+        </NavLink>
+      ))}
+    </nav>
   );
 }
 
@@ -107,6 +130,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+      <BottomNav />
     </div>
   );
 }
