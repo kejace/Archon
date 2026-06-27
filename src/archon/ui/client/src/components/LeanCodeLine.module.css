@@ -1,15 +1,15 @@
 .kw {
-  color: #7c3aed;
+  color: var(--syntax-purple);
   font-weight: 500;
 }
 
 .decl {
-  color: #005cc5;
+  color: var(--syntax-blue);
   font-weight: 700;
 }
 
 .sorry {
-  color: #b31d28;
+  color: var(--syntax-red);
   background: rgba(203, 36, 49, 0.08);
   border-radius: 3px;
   padding: 0 2px;
@@ -17,6 +17,6 @@
 }
 
 .comment {
-  color: #6a737d;
+  color: var(--syntax-comment);
   font-style: italic;
 }

@@ -65,23 +65,23 @@
 }
 
 .kind_lemma, .kind_theorem, .kind_example {
-  color: #005cc5;
+  color: var(--syntax-blue);
 }
 
 .kind_def, .kind_abbrev, .kind_instance {
-  color: #6f42c1;
+  color: var(--syntax-purple);
 }
 
 .kind_structure, .kind_class, .kind_inductive {
-  color: #0f766e;
+  color: var(--syntax-teal);
 }
 
 .kind_sorry {
-  color: #b31d28;
+  color: var(--syntax-red);
 }
 
 .kind_hunk {
-  color: #8a5a00;
+  color: var(--syntax-gold);
 }
 
 .label {
