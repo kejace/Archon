@@ -30,16 +30,21 @@ export function Sheet({ open, onClose, side = 'bottom', title, className, childr
   const panelRef = useRef<HTMLDivElement>(null);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
 
-  // Escape to close + body-scroll lock while open.
+  // Escape to close, body-scroll lock, and basic focus management while open.
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    // Move focus into the sheet, remembering where it came from so we can
+    // restore it when the sheet closes (keyboard / screen-reader users).
+    const prevFocus = document.activeElement as HTMLElement | null;
+    panelRef.current?.focus();
     return () => {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = prev;
+      prevFocus?.focus?.();
     };
   }, [open, onClose]);
 
@@ -70,6 +75,7 @@ export function Sheet({ open, onClose, side = 'bottom', title, className, childr
         className={`${styles.panel} ${styles[side]} ${className ?? ''}`}
         role="dialog"
         aria-modal="true"
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}

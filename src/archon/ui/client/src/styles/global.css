@@ -333,6 +333,7 @@ select:focus {
 .bottom-nav { display: none; }
 
 .bottom-tab {
+  position: relative;
   flex: 1 1 0;
   min-width: 0;
   display: flex;
@@ -359,6 +360,16 @@ select:focus {
 }
 .bottom-tab.active { color: var(--accent-text); }
 .bottom-tab.active .bottom-tab-icon { color: var(--accent); }
+/* A short accent bar above the active tab — clearer than colour alone. */
+.bottom-tab.active::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 26px;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--accent);
+}
 
 /* ═══════════════════════════════════════════════════════════════════════
  * RESPONSIVE — phones (≤ 640px, mirrors BP_MOBILE)
