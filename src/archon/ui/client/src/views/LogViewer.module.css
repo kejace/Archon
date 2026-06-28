@@ -413,3 +413,46 @@
   color: var(--text-muted);
   font-size: 12px;
 }
+/* ─── Mobile: master/detail ────────────────────────────────────────────
+ * The list and the reader take turns filling the viewport; filters move
+ * into a bottom sheet. `.rootMobile` is set by the component when the
+ * phone breakpoint is active. */
+.filtersBtn {
+  padding: 5px 12px;
+  min-height: 32px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.filterSheet {
+  padding: 14px 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.filterSheet .filterChips { gap: 8px; }
+
+@media (max-width: 640px), (max-height: 500px) and (pointer: coarse) {
+  .rootMobile { height: 100%; display: block; }
+  .rootMobile .sidebar {
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    border-right: none;
+    padding: 6px 0 4px;
+  }
+  .rootMobile .main { height: 100%; }
+  /* Roomier tap targets in the iteration tree. */
+  .rootMobile .groupHeader { padding: 10px 12px; }
+  .rootMobile .fileItem { padding-top: 9px; padding-bottom: 9px; }
+  /* The filter chips themselves are bigger on touch. */
+  .filterSheet .filterChip { padding: 8px 14px; font-size: 13px; }
+  /* Let the selected-file label shrink instead of forcing a wide toolbar. */
+  .rootMobile .selectedLabel { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 60px; }
+  .rootMobile .selectedCommit { display: none; }
+}

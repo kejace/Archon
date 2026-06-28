@@ -19,6 +19,8 @@ import { useDiffStructureNavigation } from '../hooks/useDiffStructureNavigation'
 import DiffView from '../components/DiffView';
 import DiffStructurePanel from '../components/DiffStructurePanel';
 import LeanCodeLine from '../components/LeanCodeLine';
+import { useIsMobile } from '../hooks/useMediaQuery';
+import { Sheet } from '../components/mobile/Sheet';
 import { parseDiffWithStructure } from '../utils/diffStructure';
 import { extractLeanStructureFromLines } from '../utils/leanStructure';
 import { highlightLeanLines } from '../utils/leanHighlight';
@@ -264,6 +266,12 @@ export default function DiffPlayback() {
   } = useDiffUrlState();
   const { activeId, jumpTo } = useDiffStructureNavigation();
 
+  // Mobile: the file tree and structure index become sheets so the diff
+  // itself gets the full width.
+  const isMobile = useIsMobile();
+  const [filesOpen, setFilesOpen] = useState(false);
+  const [structureOpen, setStructureOpen] = useState(false);
+
   useEffect(() => {
     if (fileTree.length === 0) return;
     const folderPaths = collectFolderPaths(fileTree);
@@ -326,6 +334,7 @@ export default function DiffPlayback() {
 
   const handleSelectFile = useCallback((file: FileSnapshotSummary) => {
     selectFile(file.slug);
+    setFilesOpen(false);
   }, [selectFile]);
 
   useEffect(() => {
@@ -473,20 +482,44 @@ export default function DiffPlayback() {
     ? currentEntry.step === 0 ? 'baseline' : `step ${currentEntry.step}`
     : '';
 
+  const fileTreeEl = (
+    <FileTree
+      nodes={fileTree}
+      selectedSlug={selectedSlug}
+      expandedFolders={expandedFolders}
+      onToggleFolder={toggleFolder}
+      onSelectFile={handleSelectFile}
+    />
+  );
+
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} ${isMobile ? styles.pageMobile : ''}`}>
+      {/* Desktop file-tree sidebar; on mobile it moves into a left drawer. */}
       <div className={styles.sidebar}>
         <div className={styles.sidebarTitle}>Files</div>
-        <FileTree
-          nodes={fileTree}
-          selectedSlug={selectedSlug}
-          expandedFolders={expandedFolders}
-          onToggleFolder={toggleFolder}
-          onSelectFile={handleSelectFile}
-        />
+        {fileTreeEl}
       </div>
 
+      {isMobile && (
+        <Sheet open={filesOpen} onClose={() => setFilesOpen(false)} side="left" title="Files">
+          <div className={styles.fileSheet}>{fileTreeEl}</div>
+        </Sheet>
+      )}
+
       <div className={styles.main}>
+        {isMobile && (
+          <div className={styles.mobileBar}>
+            <button className={styles.mobileBarBtn} onClick={() => setFilesOpen(true)}>
+              <span className={styles.mobileBarIcon}>☰</span>
+              <span className={styles.mobileBarFile}>{selectedFileLabel || 'Files'}</span>
+            </button>
+            {totalEntries > 0 && structureItems.length > 0 && (
+              <button className={styles.mobileBarBtn} onClick={() => setStructureOpen(true)}>
+                ☶ Structure
+              </button>
+            )}
+          </div>
+        )}
         {totalEntries > 0 && (
           <div className={styles.toolbar}>
             <div className={styles.stepNav}>
@@ -633,13 +666,29 @@ export default function DiffPlayback() {
         </div>
       </div>
 
-      {totalEntries > 0 && (
+      {/* Desktop: docked structure index. Mobile: same panel in a bottom sheet. */}
+      {totalEntries > 0 && !isMobile && (
         <DiffStructurePanel
           title={viewMode === 'diff' ? 'Diff structure' : 'File structure'}
           items={structureItems}
           activeId={activeId}
           onJump={jumpTo}
         />
+      )}
+      {isMobile && (
+        <Sheet
+          open={structureOpen}
+          onClose={() => setStructureOpen(false)}
+          side="bottom"
+          title={viewMode === 'diff' ? 'Diff structure' : 'File structure'}
+        >
+          <DiffStructurePanel
+            title=""
+            items={structureItems}
+            activeId={activeId}
+            onJump={(id) => { jumpTo(id); setStructureOpen(false); }}
+          />
+        </Sheet>
       )}
     </div>
   );

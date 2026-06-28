@@ -101,3 +101,11 @@
   font-size: 12px;
   color: var(--text-muted);
 }
+
+/* On phones this panel only renders inside a bottom sheet (see DiffPlayback),
+ * so let it fill the sheet width and drop the desktop side-border. */
+@media (max-width: 640px), (max-height: 500px) and (pointer: coarse) {
+  .panel { width: 100%; min-width: 0; max-width: none; border-left: none; }
+  .header:empty { display: none; }
+  .item { padding-top: 9px; padding-bottom: 9px; }
+}

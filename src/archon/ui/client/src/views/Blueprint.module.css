@@ -155,3 +155,46 @@
   cursor: pointer;
 }
 .gitLive:hover { background: rgba(3, 102, 214, 0.08); }
+
+/* ─── Mobile bar (drawer trigger) ──────────────────────────────────────
+ * Hidden on desktop; the phone media query reveals it. The TOC sidebar
+ * moves into a left drawer, so the reading column gets the full width. */
+.mobileBar { display: none; }
+.tocBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.tocBtnIcon { font-size: 15px; line-height: 1; }
+.tocSheet { padding: 8px 8px 16px; }
+
+@media (max-width: 640px), (max-height: 500px) and (pointer: coarse) {
+  .mobileBar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+  }
+  /* The sidebar lives in the drawer now. */
+  .toc { display: none; }
+  .body { border-radius: 8px; }
+  .reading { padding: 14px 14px; }
+  .titlePage { margin: 4px auto 22px; padding: 8px 0 18px; }
+  .docTitle { font-size: 22px; }
+  /* Enlarge the close-chapter affordance for touch. */
+  .closeChap { width: 34px; height: 34px; font-size: 18px; top: 14px; }
+  /* Git time-travel is secondary on a phone — keep it compact, drop the
+   * mouse-only drag handle (height is fixed via inline style; shrink it). */
+  .gitResize { display: none; }
+  .gitPanel { height: 96px !important; margin-top: 10px; }
+}

@@ -8,6 +8,8 @@ import { fmtDuration, primaryModel, truncateSubject } from '../utils/format';
 import LogEntryLine from '../components/LogEntryLine';
 import MarkdownBlock from '../components/MarkdownBlock';
 import ProverMetaHeader from '../components/ProverMetaHeader';
+import { useIsMobile } from '../hooks/useMediaQuery';
+import { Sheet } from '../components/mobile/Sheet';
 import styles from './LogViewer.module.css';
 
 // --- Sidebar components ---
@@ -366,6 +368,17 @@ export default function LogViewer() {
   const navigate = useNavigate();
   const highlightRef = useRef<HTMLDivElement>(null);
 
+  // Mobile master/detail: the list and the reader can't coexist on a phone,
+  // so we show one pane at a time. Selecting a log slides to the reader; a
+  // back button returns to the list. Filters live in a bottom sheet there.
+  const isMobile = useIsMobile();
+  const [mobilePane, setMobilePane] = useState<'list' | 'detail'>('list');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const handleSelect = (path: string) => {
+    setSelectedFile(path);
+    setMobilePane('detail');
+  };
+
   const { data: logsData } = useLogs();
   const { initialSelectedFile, initialHighlightTs, backTarget } = useLogDeepLink(logsData);
   const { entries, streaming } = useLogStream(selectedFile);
@@ -570,101 +583,118 @@ export default function LogViewer() {
     return { iterId: m[1], proverSlug: m[2] };
   }, [selectedFile, selectedRole, selectedIsArtifact]);
 
-  return (
-    <div className={styles.root}>
-      {/* Sidebar */}
-      <div className={styles.sidebar}>
-        {logsData?.groups.slice().reverse().map(g => (
-          <IterGroup
-            key={g.id}
-            group={g}
-            selectedFile={selectedFile}
-            onSelect={setSelectedFile}
-            isLatest={g.id === latestGroupId}
-            nowMs={nowMs}
-          />
-        ))}
+  // Shared filter chips — rendered inline in the toolbar on desktop, and in a
+  // bottom sheet on mobile (the 8 chips would otherwise dominate the screen).
+  const filterChips = (
+    <div className={styles.filterChips}>
+      {FILTER_OPTIONS.map(option => {
+        const active = selectedFilterSet.has(option.value);
+        return (
+          <button
+            key={option.value}
+            type="button"
+            className={`${styles.filterChip} ${active ? styles.filterChipActive : ''}`}
+            onClick={() => toggleFilter(option.value)}
+            aria-pressed={active}
+          >
+            {option.label}
+          </button>
+        );
+      })}
+    </div>
+  );
 
-        {logsData?.flat && logsData.flat.length > 0 && (
-          <div className={styles.group}>
-            <div className={styles.groupHeader}>
-              <span className={styles.groupTitle}>Legacy logs</span>
-            </div>
-            <div className={styles.groupBody}>
-              {logsData.flat.map(f => (
-                <div
-                  key={f.path}
-                  className={`${styles.fileItem} ${f.path === selectedFile ? styles.fileItemActive : ''}`}
-                  onClick={() => setSelectedFile(f.path)}
-                >
-                  <span className={styles.fileName}>{f.name}</span>
-                </div>
-              ))}
-            </div>
+  const sidebarEl = (
+    <div className={styles.sidebar}>
+      {logsData?.groups.slice().reverse().map(g => (
+        <IterGroup
+          key={g.id}
+          group={g}
+          selectedFile={selectedFile}
+          onSelect={handleSelect}
+          isLatest={g.id === latestGroupId}
+          nowMs={nowMs}
+        />
+      ))}
+
+      {logsData?.flat && logsData.flat.length > 0 && (
+        <div className={styles.group}>
+          <div className={styles.groupHeader}>
+            <span className={styles.groupTitle}>Legacy logs</span>
+          </div>
+          <div className={styles.groupBody}>
+            {logsData.flat.map(f => (
+              <div
+                key={f.path}
+                className={`${styles.fileItem} ${f.path === selectedFile ? styles.fileItemActive : ''}`}
+                onClick={() => handleSelect(f.path)}
+              >
+                <span className={styles.fileName}>{f.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!logsData?.groups.length && !logsData?.flat.length && (
+        <div className={styles.emptyHint}>No logs yet</div>
+      )}
+    </div>
+  );
+
+  const mainEl = (
+    <div className={styles.main}>
+      <div className={styles.toolbar}>
+        {isMobile && (
+          <button className={styles.backBtn} onClick={() => setMobilePane('list')} title="Back to log list">
+            ‹ Logs
+          </button>
+        )}
+        {backTarget && (
+          <button className={styles.backBtn} onClick={goBackToDiffs} title="Back to Diffs view">
+            ← Diffs
+          </button>
+        )}
+        {selectedRole && (
+          <span className={styles.roleTag} style={{ color: ROLE_COLORS[selectedRole] || 'var(--text-muted)' }}>
+            {selectedRoleLabel}
+          </span>
+        )}
+        <span className={styles.selectedLabel}>{selectedLabel || 'Select a log'}</span>
+        {selectedCommit && (
+          <span
+            className={styles.selectedCommit}
+            title={`${selectedCommit.shortSha} · ${selectedCommit.subject}`}
+          >
+            {selectedCommit.shortSha}
+            <span className={styles.selectedCommitSubject}>
+              {truncateSubject(selectedCommit.subject, 80)}
+            </span>
+          </span>
+        )}
+        {/* Desktop: inline filter bar. Mobile: a compact "Filters" button that
+            opens the chips in a bottom sheet. */}
+        {!selectedIsArtifact && !isMobile && (
+          <div className={styles.filterBar} aria-label="Event type filters">
+            <span className={styles.filterLabel}>Show</span>
+            {filterChips}
+            {!allFiltersSelected && (
+              <button type="button" className={styles.resetFiltersBtn} onClick={resetFilters}>
+                Reset
+              </button>
+            )}
           </div>
         )}
-
-        {!logsData?.groups.length && !logsData?.flat.length && (
-          <div className={styles.emptyHint}>No logs yet</div>
+        {!selectedIsArtifact && isMobile && (
+          <button type="button" className={styles.filtersBtn} onClick={() => setFiltersOpen(true)}>
+            ⚲ Filters{allFiltersSelected ? '' : ` · ${selectedFilters.length}`}
+          </button>
         )}
+        {streaming && !selectedIsArtifact && <span className={styles.live}>● live</span>}
+        <span className={styles.count}>
+          {selectedIsArtifact ? `${artifactContent.length.toLocaleString()} chars` : `${filtered.length} entries`}
+        </span>
       </div>
-
-      {/* Main content */}
-      <div className={styles.main}>
-        <div className={styles.toolbar}>
-          {backTarget && (
-            <button className={styles.backBtn} onClick={goBackToDiffs} title="Back to Diffs view">
-              ← Diffs
-            </button>
-          )}
-          {selectedRole && (
-            <span className={styles.roleTag} style={{ color: ROLE_COLORS[selectedRole] || 'var(--text-muted)' }}>
-              {selectedRoleLabel}
-            </span>
-          )}
-          <span className={styles.selectedLabel}>{selectedLabel || 'Select a log'}</span>
-          {selectedCommit && (
-            <span
-              className={styles.selectedCommit}
-              title={`${selectedCommit.shortSha} · ${selectedCommit.subject}`}
-            >
-              {selectedCommit.shortSha}
-              <span className={styles.selectedCommitSubject}>
-                {truncateSubject(selectedCommit.subject, 80)}
-              </span>
-            </span>
-          )}
-          {!selectedIsArtifact && (
-            <div className={styles.filterBar} aria-label="Event type filters">
-              <span className={styles.filterLabel}>Show</span>
-              <div className={styles.filterChips}>
-                {FILTER_OPTIONS.map(option => {
-                  const active = selectedFilterSet.has(option.value);
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      className={`${styles.filterChip} ${active ? styles.filterChipActive : ''}`}
-                      onClick={() => toggleFilter(option.value)}
-                      aria-pressed={active}
-                    >
-                      {option.label}
-                    </button>
-                  );
-                })}
-              </div>
-              {!allFiltersSelected && (
-                <button type="button" className={styles.resetFiltersBtn} onClick={resetFilters}>
-                  Reset
-                </button>
-              )}
-            </div>
-          )}
-          {streaming && !selectedIsArtifact && <span className={styles.live}>● live</span>}
-          <span className={styles.count}>
-            {selectedIsArtifact ? `${artifactContent.length.toLocaleString()} chars` : `${filtered.length} entries`}
-          </span>
-        </div>
 
         {showSessionSummary && <RunSummaryBar entries={entries} />}
 
@@ -731,7 +761,26 @@ export default function LogViewer() {
             </div>
           )}
         </div>
-      </div>
+    </div>
+  );
+
+  // Desktop: list + reader side by side. Mobile: one pane at a time, plus a
+  // bottom sheet for the event-type filters.
+  return (
+    <div className={`${styles.root} ${isMobile ? styles.rootMobile : ''}`}>
+      {isMobile ? (mobilePane === 'list' ? sidebarEl : mainEl) : (<>{sidebarEl}{mainEl}</>)}
+      {isMobile && (
+        <Sheet open={filtersOpen} onClose={() => setFiltersOpen(false)} side="bottom" title="Show events">
+          <div className={styles.filterSheet}>
+            {filterChips}
+            {!allFiltersSelected && (
+              <button type="button" className={styles.resetFiltersBtn} onClick={resetFilters}>
+                Reset to all
+              </button>
+            )}
+          </div>
+        </Sheet>
+      )}
     </div>
   );
 }
