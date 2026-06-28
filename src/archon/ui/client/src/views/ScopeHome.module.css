@@ -5,15 +5,15 @@
      as a whole. */
   height: calc(100vh - 64px);
   overflow: hidden;
-  background-color: #f8fafc;
-  color: #0f172a;
-  font-family: 'Inter', -apple-system, sans-serif;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
 }
 
 .sidebar {
   width: 320px;
-  background-color: #ffffff;
-  border-right: 1px solid #e2e8f0;
+  background-color: var(--bg-primary);
+  border-right: 1px solid var(--border);
   padding: 24px;
   display: flex;
   flex-direction: column;
@@ -29,7 +29,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #64748b;
+  color: var(--text-secondary);
   margin: 0;
   margin-bottom: 8px;
 }
@@ -52,14 +52,14 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #64748b;
+  color: var(--text-secondary);
   margin: 8px 4px 0;
 }
 
 .projectFolderTitle {
   font-size: 12px;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--text-muted);
   padding: 4px 4px 0;
 }
 
@@ -67,47 +67,47 @@
   text-align: left;
   padding: 12px 16px;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
+  border: 1px solid var(--border);
+  background: var(--bg-primary);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .projectButton:hover {
-  background-color: #f1f5f9;
-  border-color: #cbd5e1;
+  background-color: var(--bg-tertiary);
+  border-color: var(--border-strong);
 }
 
 .projectButton.active {
-  background-color: #eff6ff;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  background-color: var(--accent-bg);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-ring);
 }
 
 .projectName {
   font-size: 14px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
 .projectButton.active .projectName {
-  color: #1d4ed8;
+  color: var(--accent-text);
 }
 
 .projectPath {
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--text-muted);
   margin-top: 4px;
   word-break: break-all;
 }
 
 .noDagBadge {
   font-size: 10px;
-  background-color: #fef3c7;
-  color: #d97706;
+  background-color: var(--bg-tertiary);
+  color: var(--orange);
   padding: 1px 6px;
   border-radius: 9999px;
   font-weight: 500;
@@ -128,15 +128,15 @@
 }
 
 .card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
   border-radius: 12px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
   padding: 32px;
 }
 
 .placeholderCard {
-  background: #f8fafc;
+  background: var(--bg-secondary);
   border-style: dashed;
   border-width: 2px;
   text-align: center;
@@ -145,35 +145,70 @@
 .cardTitle {
   font-size: 20px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-primary);
   margin-top: 0;
   margin-bottom: 24px;
-  border-bottom: 2px solid #f1f5f9;
+  border-bottom: 2px solid var(--bg-tertiary);
   padding-bottom: 12px;
 }
 
 .markdownWrapper {
   font-size: 15px;
   line-height: 1.6;
-  color: #334155;
+  color: var(--text-secondary);
 }
 
 .markdownWrapper h1,
 .markdownWrapper h2,
 .markdownWrapper h3 {
-  color: #0f172a;
+  color: var(--text-primary);
   margin-top: 24px;
   margin-bottom: 12px;
 }
 
 .markdownWrapper code {
-  background-color: #f1f5f9;
+  background-color: var(--bg-tertiary);
   padding: 2px 6px;
   border-radius: 4px;
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 
 .placeholderText {
-  color: #64748b;
+  color: var(--text-secondary);
   font-size: 14px;
+}
+
+/* ── Phones: stack the members sidebar above the content and let the page
+   flow naturally instead of locking two independent scroll panes into a
+   viewport that's too small for them. Mirrors the single-column reflow used
+   by the other views. ───────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .root {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 16px;
+    overflow-y: visible;
+  }
+
+  .content {
+    padding: 16px;
+    gap: 20px;
+  }
+
+  .card {
+    padding: 18px;
+  }
+
+  .cardTitle {
+    font-size: 18px;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+  }
 }

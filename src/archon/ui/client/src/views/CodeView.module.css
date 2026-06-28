@@ -2,14 +2,14 @@
   display: flex;
   height: calc(100vh - 64px);
   overflow: hidden;
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 .sidebar {
   width: 340px;
-  background-color: #ffffff;
-  border-right: 1px solid #e2e8f0;
+  background-color: var(--bg-primary);
+  border-right: 1px solid var(--border);
   padding: 20px 16px;
   display: flex;
   flex-direction: column;
@@ -25,7 +25,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #64748b;
+  color: var(--text-secondary);
   margin: 0 0 8px 0;
 }
 
@@ -39,18 +39,18 @@
   cursor: pointer;
   padding: 4px 6px;
   border-radius: 4px;
-  color: #334155;
+  color: var(--text-secondary);
   font-weight: 500;
   user-select: none;
 }
 
 .tree summary:hover {
-  background-color: #f1f5f9;
+  background-color: var(--bg-tertiary);
 }
 
 .tree details > div {
   padding-left: 14px;
-  border-left: 1px dashed #e2e8f0;
+  border-left: 1px dashed var(--border);
   margin-left: 6px;
 }
 
@@ -63,18 +63,18 @@
   background: transparent;
   cursor: pointer;
   border-radius: 4px;
-  color: #1e293b;
+  color: var(--text-primary);
   font-family: inherit;
   font-size: 13px;
 }
 
 .fileButton:hover {
-  background-color: #f1f5f9;
+  background-color: var(--bg-tertiary);
 }
 
 .fileButton.active {
-  background-color: #eff6ff;
-  color: #1d4ed8;
+  background-color: var(--accent-bg);
+  color: var(--accent-text);
   font-weight: 600;
 }
 
@@ -88,11 +88,11 @@
 
 .contentHeader {
   padding: 14px 24px;
-  border-bottom: 1px solid #e2e8f0;
-  background: #ffffff;
-  font-family: ui-monospace, SFMono-Regular, monospace;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-primary);
+  font-family: var(--font-mono);
   font-size: 13px;
-  color: #475569;
+  color: var(--text-secondary);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -103,26 +103,63 @@
 .contentBody {
   flex-grow: 1;
   overflow: auto;
-  background: #fcfcfc;
+  background: var(--bg-primary);
 }
 
 .code {
   margin: 0;
   padding: 16px 24px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 13px;
   line-height: 1.5;
   white-space: pre;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
 .placeholder {
   padding: 60px 24px;
   text-align: center;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .error {
   padding: 24px;
-  color: #b91c1c;
+  color: var(--red);
+}
+
+/* ── Phones: stack the file tree above the code pane and let the page flow;
+   the code keeps its own horizontal scroll for long lines. Mirrors the
+   single-column reflow used by the other views. ──────────────────────────── */
+@media (max-width: 640px) {
+  .root {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    max-height: 40vh;
+    padding: 14px;
+  }
+
+  .content {
+    overflow: visible;
+  }
+
+  .contentHeader {
+    padding: 10px 14px;
+    font-size: 12px;
+  }
+
+  .contentBody {
+    overflow-x: auto;
+  }
+
+  .code {
+    padding: 12px 14px;
+    font-size: 12px;
+  }
 }
