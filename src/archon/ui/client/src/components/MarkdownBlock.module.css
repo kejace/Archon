@@ -3,40 +3,39 @@
  * the app. */
 
 .markdown {
-  /* Design tokens — keep variables here so the palette can be retuned in
-   * one place. Hues sit in the indigo / slate family with a single warm
-   * accent for links; this reads as "modern dev tool" without being
-   * brand-specific. */
-  --md-fg: #1e293b;            /* slate-800 */
-  --md-fg-muted: #64748b;      /* slate-500 */
-  --md-heading: #0f172a;       /* slate-900 */
-  --md-rule: #e2e8f0;          /* slate-200 */
-  --md-rule-strong: #cbd5e1;   /* slate-300 */
+  /* Design tokens — these now alias the global palette so the markdown
+   * surface follows the light/dark theme automatically. Kept as a local
+   * indirection layer so the markdown look can still be retuned in one
+   * place without touching every rule below. */
+  --md-fg: var(--text-primary);
+  --md-fg-muted: var(--text-secondary);
+  --md-heading: var(--text-primary);
+  --md-rule: var(--border);
+  --md-rule-strong: var(--border-strong);
 
-  --md-link: #4f46e5;          /* indigo-600 */
-  --md-link-hover: #3730a3;    /* indigo-800 */
+  --md-link: var(--accent-strong);
+  --md-link-hover: var(--accent-text);
 
   /* Inline code: soft indigo tint, indigo-tinted text. The tint is low-
    * saturation so dense prose with many code tokens doesn't get noisy. */
-  --md-code-bg: rgba(99, 102, 241, 0.10);
-  --md-code-fg: #4338ca;       /* indigo-700 */
-  --md-code-ring: rgba(99, 102, 241, 0.18);
+  --md-code-bg: var(--accent-bg);
+  --md-code-fg: var(--accent-text);
+  --md-code-ring: var(--accent-ring);
 
-  /* Code blocks: light surface with subtle indigo tint to coordinate
-   * with inline code pills. Previously used a dark slate slab which
-   * felt too heavy in light-theme dashboards. */
-  --md-pre-bg: #f8fafc;        /* slate-50 */
-  --md-pre-fg: #1e293b;        /* slate-800 */
-  --md-pre-border: #e2e8f0;    /* slate-200 */
+  /* Code blocks: secondary surface that coordinates with inline code
+   * pills and flips with the theme. */
+  --md-pre-bg: var(--bg-secondary);
+  --md-pre-fg: var(--text-primary);
+  --md-pre-border: var(--border);
 
   /* Table chrome */
-  --md-table-bg: #ffffff;
-  --md-table-head-bg: #f8fafc; /* slate-50 */
-  --md-table-stripe: #fafbfc;
-  --md-table-border: #e2e8f0;
+  --md-table-bg: var(--bg-primary);
+  --md-table-head-bg: var(--bg-secondary);
+  --md-table-stripe: var(--bg-secondary);
+  --md-table-border: var(--border);
 
-  --md-quote-bar: #6366f1;     /* indigo-500 */
-  --md-quote-bg: rgba(99, 102, 241, 0.05);
+  --md-quote-bar: var(--accent);
+  --md-quote-bg: var(--accent-bg-soft);
 
   --md-radius-sm: 4px;
   --md-radius-md: 6px;
@@ -203,22 +202,22 @@
  * indigo code pills. Each token gets its own class so re-theming
  * is one edit per role. */
 .markdown pre code .hl-kw {
-  color: #7c3aed; /* violet-600 — generic keywords (by, where, fun, ...) */
+  color: var(--syntax-purple); /* violet-600 — generic keywords (by, where, fun, ...) */
   font-weight: 500;
 }
 .markdown pre code .hl-decl {
-  color: #2563eb; /* blue-600 — declaration kinds (theorem, lemma, def, ...) */
+  color: var(--syntax-blue); /* blue-600 — declaration kinds (theorem, lemma, def, ...) */
   font-weight: 600;
 }
 .markdown pre code .hl-comment {
-  color: #64748b; /* slate-500 — softer than body so it visually recedes */
+  color: var(--text-secondary); /* slate-500 — softer than body so it visually recedes */
   font-style: italic;
 }
 .markdown pre code .hl-sorry {
   /* `sorry` deserves to stand out — it's the placeholder the agent
    * is hunting. Warm amber + subtle ring + slight background so it
    * catches the eye even in a wall of code. */
-  color: #b45309; /* amber-700 */
+  color: var(--syntax-gold); /* amber-700 */
   background: rgba(245, 158, 11, 0.12);
   padding: 0 3px;
   border-radius: 3px;

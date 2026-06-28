@@ -247,7 +247,7 @@
 
 .inlineHintWarn {
   font-size: 11px;
-  color: #8a5a00;
+  color: var(--syntax-gold);
   background: rgba(255, 193, 7, 0.12);
   border: 1px solid rgba(255, 193, 7, 0.28);
   border-radius: 999px;
@@ -320,7 +320,7 @@
   position: absolute;
   width: 10px;
   height: 10px;
-  background: #ff8c00;
+  background: var(--orange);
   border: 2px solid white;
   border-radius: 50%;
   box-shadow: 0 1px 3px rgba(0,0,0,0.18);

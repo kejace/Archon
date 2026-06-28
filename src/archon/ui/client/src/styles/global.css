@@ -39,6 +39,23 @@
   --accent-bg-soft:rgba(99, 102, 241, 0.06);
   --accent-ring:   rgba(99, 102, 241, 0.28);
 
+  /* ─── Syntax / status content colors ───────────────────────────────
+   * The GitHub-light palette used by Lean highlighting, unified diffs,
+   * status chips, and blueprint environment borders. Centralized here
+   * so the dark theme can swap them for higher-luminance variants that
+   * stay legible on dark surfaces. Light values match the originals. */
+  --syntax-blue:    #0366d6;
+  --syntax-red:     #d73a49;
+  --syntax-green:   #22863a;
+  --syntax-purple:  #6f42c1;
+  --syntax-orange:  #e36209;
+  --syntax-gold:    #b08800;
+  --syntax-teal:    #00868a;
+  --syntax-comment: #6a737d;
+
+  /* Native form controls, scrollbars, and the canvas all read this. */
+  color-scheme: light;
+
   /* ─── Typography ──────────────────────────────────────────────────
    * Inter as primary, falls back to system stack. Inter has better
    * digit alignment and a more contemporary feel than -apple-system
@@ -49,6 +66,49 @@
     "Helvetica Neue", Arial, sans-serif;
   --font-mono:
     "JetBrains Mono", "SF Mono", "Menlo", "Consolas", monospace;
+}
+
+/* ─── Dark theme ─────────────────────────────────────────────────────
+ * Applied when <html data-theme="dark"> is set (see useTheme + the
+ * no-flash bootstrap in index.html). Only the palette variables are
+ * overridden — every `var(--…)` reference flips automatically, so the
+ * component CSS modules need no theme-specific rules. Surfaces use a
+ * slate-tinted near-black scale that matches the indigo accents; text
+ * and semantic colors are lifted in luminance for legibility. */
+:root[data-theme="dark"] {
+  --bg-primary:   #0d1117;
+  --bg-secondary: #161b22;
+  --bg-tertiary:  #1c2330;
+  --border:       #2a3340;
+  --border-strong:#3a4452;
+
+  --text-primary:   #e6edf3;
+  --text-secondary: #9aa7b4;
+  --text-muted:     #6b7785;
+
+  --blue:   #58a6ff;
+  --green:  #3fb950;
+  --orange: #f0883e;
+  --red:    #f85149;
+  --purple: #bc8cff;
+
+  --accent:        #818cf8; /* indigo-400 */
+  --accent-strong: #a5b4fc; /* indigo-300 */
+  --accent-text:   #c7d2fe; /* indigo-200, readable on dark */
+  --accent-bg:     rgba(129, 140, 248, 0.16);
+  --accent-bg-soft:rgba(129, 140, 248, 0.09);
+  --accent-ring:   rgba(129, 140, 248, 0.38);
+
+  --syntax-blue:    #58a6ff;
+  --syntax-red:     #ff7b72;
+  --syntax-green:   #3fb950;
+  --syntax-purple:  #d2a8ff;
+  --syntax-orange:  #ffa657;
+  --syntax-gold:    #e3b341;
+  --syntax-teal:    #56d4bc;
+  --syntax-comment: #8b949e;
+
+  color-scheme: dark;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -167,6 +227,37 @@ code, pre { font-family: var(--font-mono); }
   color: var(--accent-text);
   background: var(--accent-bg);
   font-weight: 600;
+}
+
+/* ─── Theme toggle ─────────────────────────────────────────────────
+ * Pushed to the right edge of the header (margin-left:auto) so it sits
+ * opposite the app identity. Square icon button that matches the nav
+ * hover treatment — quiet until interacted with. */
+.theme-toggle {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease, border-color 0.1s ease;
+}
+.theme-toggle:hover {
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  border-color: var(--border-strong);
+}
+.theme-toggle:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
 }
 
 .main-content {

@@ -1,5 +1,6 @@
 import { Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import { useProject } from './hooks/useApi';
+import { useTheme } from './hooks/useTheme';
 import Overview from './views/Overview';
 import LogViewer from './views/LogViewer';
 import Journal from './views/Journal';
@@ -17,12 +18,28 @@ function ConnectionBanner({ isError }: { isError: boolean }) {
   if (!isError) return null;
   return (
     <div style={{
-      background: '#dc2626', color: 'white', padding: '6px 16px',
+      background: 'var(--red)', color: 'white', padding: '6px 16px',
       fontSize: '13px', textAlign: 'center', fontWeight: 500,
     }}>
       ⚠ Cannot reach server — check that <code style={{ background: 'rgba(0,0,0,0.2)', padding: '1px 4px', borderRadius: 3 }}>
       archon dashboard &lt;project&gt;</code> is running and you're on the correct port
     </div>
+  );
+}
+
+function ThemeToggle() {
+  const { theme, toggle } = useTheme();
+  const isDark = theme === 'dark';
+  return (
+    <button
+      type="button"
+      className="theme-toggle"
+      onClick={toggle}
+      aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+      title={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+    >
+      {isDark ? '☀' : '☾'}
+    </button>
   );
 }
 
@@ -46,6 +63,7 @@ export default function App() {
           <NavLink to="/diffs" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Diffs</NavLink>
           <NavLink to="/journal" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Journal</NavLink>
         </nav>
+        <ThemeToggle />
       </header>
       <main className="main-content">
         <Routes>
