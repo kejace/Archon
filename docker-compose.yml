@@ -26,9 +26,15 @@ services:
     # Dashboard picks a free port in this range and prints the URL.
     ports:
       - "8080-8099:8080-8099"
-    # API keys: copy .env.example to .env and fill in what you use. All are
-    # optional except the Anthropic credential needed to drive Claude Code
-    # (you can instead `claude` login interactively, persisted via the volume).
+    # API keys live in each project's <project>/.archon/.env, which Archon
+    # loads itself. We deliberately do NOT inject ANTHROPIC_API_KEY /
+    # OPENROUTER_API_KEY / etc. here: a `${VAR:-}` passthrough sets the var to
+    # an EMPTY string inside the container, and Archon's loader uses
+    # os.environ.setdefault() — so an empty-but-present var SHADOWS the real
+    # value in .archon/.env and silently disables that provider.
+    # If you prefer host-level keys, pass them explicitly at run time instead,
+    # e.g. `OPENROUTER_API_KEY=sk-... docker compose run --rm archon` plus an
+    # `environment: [OPENROUTER_API_KEY]` list-style entry (no `:-` default).
     env_file:
       - path: .env
         required: false
@@ -37,12 +43,13 @@ services:
       # reachable from the host browser (the image sets this too; kept here for
       # visibility / `docker run` parity).
       ARCHON_DASHBOARD_HOST: 0.0.0.0
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
-      MOONSHOT_API_KEY: ${MOONSHOT_API_KEY:-}
-      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      # Keep ALL of Claude Code's config (not just credentials) inside the
+      # persisted ~/.claude volume. Without this, ~/.claude.json (onboarding /
+      # theme / login state) lives at HOME root, outside the volume, so the
+      # interactive `archon discuss` TUI re-onboards every container. The image
+      # sets this too; kept here for `docker run` parity. Must match the
+      # archon-claude mount target below.
+      CLAUDE_CONFIG_DIR: /home/archon/.claude
     # Interactive: archon init / discuss prompt for input.
     stdin_open: true
     tty: true

@@ -98,10 +98,21 @@ RUN archon setup --yes
 # login shells too. (Done as root, after the expensive setup layer, to keep
 # the cache intact.)
 USER root
-RUN printf 'export PATH="/opt/archon-venv/bin:$HOME/.elan/bin:$HOME/.local/bin:$PATH"\n' \
+RUN printf 'export PATH="/opt/archon-venv/bin:$HOME/.elan/bin:$HOME/.local/bin:$PATH"\nexport CLAUDE_CONFIG_DIR="$HOME/.claude"\n' \
         > /etc/profile.d/archon.sh \
     && chmod 0644 /etc/profile.d/archon.sh
 USER ${USERNAME}
+
+# Pin Claude Code's *entire* config dir into the persisted ~/.claude volume.
+# Claude splits its state: credentials live in the ~/.claude *directory* (the
+# named volume, so they persist), but its main config file — holding
+# `hasCompletedOnboarding`, theme, etc. — defaults to ~/.claude.json at HOME
+# ROOT, which is OUTSIDE the volume and so is recreated fresh in every
+# container. The result: headless `claude -p` (the loop) works, but the
+# interactive TUI (`archon discuss`) re-runs first-run onboarding every time,
+# which reads as "please log in again". Setting CLAUDE_CONFIG_DIR relocates
+# .claude.json into the volume too, so onboarding/login persist across runs.
+ENV CLAUDE_CONFIG_DIR=/home/${USERNAME}/.claude
 
 # Bind the dashboard to all interfaces so the published port (compose maps
 # 8080-8099) is reachable from the host browser. The server otherwise defaults
